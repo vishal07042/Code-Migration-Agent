@@ -1,0 +1,47 @@
+[project]
+name = "code-migration-agent"
+version = "0.1.0"
+description = "LangGraph code migration agent: JS -> Python/TS with differential testing"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+  "langgraph>=0.2",
+  "langchain-openai>=0.2",
+  "langchain-core>=0.3",
+  "pydantic>=2.0",
+  "GitPython>=3.1",
+  "tenacity>=8.0",
+  "pyyaml>=6.0",
+  "openai>=1.0",
+  "langgraph-checkpoint-sqlite>=3.1.1",
+  "python-dotenv>=1.2.4",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.4",
+  "mypy>=1.0",
+  "hypothesis>=6.0",
+  "pandas>=3.0.6",
+  "plotly>=7.1.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+# Runtime here is 3.14 and third-party stubs (numpy) need 3.12+ syntax.
+# Source must still stay 3.11-compatible by discipline (ruff target py311).
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "numpy.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

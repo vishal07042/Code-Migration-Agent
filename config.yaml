@@ -1,0 +1,73 @@
+# Code Migration Agent — config
+# Free models rotate. Never hardcode names in code; edit roles below.
+# Refresh options via: GET $LLM_MODELS_ENDPOINT (see agent/config.py)
+
+llm:
+  # Active provider: "openrouter" (working) or "zen" (free-tier chat only
+  # works from inside the OpenCode runtime; standalone gets 403 FreeTierError).
+  provider: "openrouter"
+  concurrency: 4
+  timeout_s: 90
+  max_tokens: 2048
+  max_structured_retries: 3
+  cache_db: ".cache/llm_cache.sqlite"
+
+# Provider profiles. Keys come from env; never commit them.
+providers:
+  zen:
+    base_url: "https://opencode.ai/zen/v1"
+    api_key_env: "ZEN_API_KEY"
+    models_endpoint: "https://opencode.ai/zen/v1/models"
+  openrouter:
+    base_url: "https://openrouter.ai/api/v1"
+    api_key_env: "OPENROUTER_API_KEY"
+    models_endpoint: "https://openrouter.ai/api/v1/models"
+    referer: "https://localhost/code-migration-agent"
+    title: "code-migration-agent"
+
+# Role -> model name. Update from the provider's /models when rotation happens.
+roles:
+  converter: "poolside/laguna-s-2.1"
+  fixer: "poolside/laguna-s-2.1"
+  critic: "poolside/laguna-s-2.1"
+
+budgets:
+  max_attempts: 5
+  max_tokens_per_file: 8000
+  sandbox_timeout_s: 10
+  sandbox_memory_mb: 512
+
+targets:
+  default: "python"
+
+comparison:
+  float_rel_tolerance: 1.0e-9
+  undefined_null_distinct: true
+
+harness:
+  fuzz_examples: 50
+  timeout_s: 10
+
+eval:
+  corpus_dir: "eval/corpus"
+  report_html: "eval/report.html"
+  replay_json: "web/public/run-report.json"
+
+cheat:
+  # Any occurrences per non-empty line. Legit generic helpers (list[Any])
+  # sit near 0.25; a file full of untyped escapes scores ~1.0.
+  any_density_threshold: 0.3
+  type_ignore_denied: true
+
+# Semantic trap list (v1). Referenced by convert prompt via {trap list}.
+traps:
+  - "== vs ===, JS truthiness ([] \"0\" {} are truthy in JS)"
+  - "undefined vs null vs None"
+  - "Numbers: all floats, 32-bit bitwise ops, / never integer division, NaN, -0, Infinity, MAX_SAFE_INTEGER"
+  - "Default .sort() is lexicographic and stable; comparator semantics differ"
+  - "Strings are UTF-16: .length, indexing, slicing differ for emoji"
+  - "Array holes, .map with index, parseInt radix quirks"
+  - "Object key order and mutation/aliasing semantics"
+  - "this, prototypes, closures captured in loops"
+  - "Regex flavor differences"
+  - "Date and timezone handling"
